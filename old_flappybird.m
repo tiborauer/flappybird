@@ -45,7 +45,6 @@ InGameParams.CurrentBkg = 1;
 InGameParams.CurrentBird = 1;
 
 Flags.IsGameStarted = true;     %
-Flags.IsFirstTubeAdded = false; % Has the first tube been added to TubeLayer
 Flags.ResetFloorTexture = true; % Result the pointer for the floor texture
 Flags.PreGame = true;
 Flags.NextTubeReady = true;
@@ -57,16 +56,10 @@ FlyKeyValid = true(size(FlyKeyNames));      %
 %% Canvases:
 MainCanvas = [];
 
-% The scroll layer for the tubes
-TubeLayer.Alpha = [];
-TubeLayer.CData = [];
-
-
 %% RESOURCES:
 Sprites = [];
 
 %% Positions:
-Bird.COLLIDE_MASK = [];
 Bird.INIT_SCREEN_POS = [45 100];                    % In [x y] order;
 Bird.WorldX = [];
 Bird.ScreenPos = []; %[45 100];   % Center = The 9th element horizontally (1based)
@@ -153,8 +146,8 @@ while 1
             frame_updated = true;
             
             % If the bird has fallen to the ground
-            if Bird.ScreenPos(2) >= 200-5
-                Bird.ScreenPos(2) = 200-5;
+            if Bird.ScreenPos(2) >= GAME.FLOOR_TOP_Y-5
+                Bird.ScreenPos(2) = GAME.FLOOR_TOP_Y-5;
                 gameover = true;
                 if abs(Bird.Angle - pi/2) < 1e-3
                     fall_to_bottom = true;
@@ -199,7 +192,7 @@ while 1
                 
                 for i_save = 1:4     % Try saving four times if error occurs
                     try
-                        save sprites.mat Best -append
+                        save old_sprites.mat Best -append
                         break;
                     catch
                         continue;
@@ -212,7 +205,7 @@ while 1
             score_report = {sprintf('Score: %d', Score), sprintf('Best: %d', Best)};
             set(ScoreInfoHdl, 'Visible','on', 'String', score_report);
             set(GameOverHdl, 'Visible','on');
-            save sprites.mat Best -append
+            save old_sprites.mat Best -append
             if FlyKeyStatus
                 FlyKeyStatus = false;
                 break;
@@ -226,9 +219,9 @@ while 1
     end
 end
     function initVariables()
-        Sprites = load('sprites.mat');
+        Sprites = load('old_sprites.mat');
         GAME.SPEED = 1;
-        GAME.SCALE = 4; % Magnification (1-4)
+        GAME.SCALE = 4;
         GAME.MAX_FRAME_SKIP = 5;
         res = get(0,'ScreenSize');
         GAME.RESOLUTION = res([4 3])/GAME.SCALE;
@@ -262,10 +255,7 @@ end
         bird_size = Sprites.Bird.Size;
         [Bird.XGRID, Bird.YGRID] = meshgrid(-ceil(bird_size(2)/2):floor(bird_size(2)/2), ...
             ceil(bird_size(1)/2):-1:-floor(bird_size(1)/2));
-        Bird.COLLIDE_MASK = false(12,12);
-        [tempx, tempy] = meshgrid(linspace(-1,1,12));
-        Bird.COLLIDE_MASK = (tempx.^2 + tempy.^2) <= 1;
-        
+       
         
         Bird.OSCIL_RANGE = [128 4]; % [YPos, Amplitude]
         
@@ -347,19 +337,13 @@ end
             'FontName', 'Helvetica', 'FontSize', 20, 'FontWeight', 'Bold', 'HorizontalAlignment', 'center','Color',[1 1 1], 'Visible', 'off');
     end
     function initGame()
-        % The scroll layer for the tubes
-        TubeLayer.Alpha = false([GAME.RESOLUTION.*[1 2] 3]);
-        TubeLayer.CData = uint8(zeros([GAME.RESOLUTION.*[1 2] 3]));
-        
         Bird.Angle = 0;
         Score = 0;
-        %TubeLayer.Alpha(GAME.FLOOR_TOP_Y:GAME.RESOLUTION(1), :, :) = true;
+
         Flags.ResetFloorTexture = true;
         SinYPos = 1;
         Flags.PreGame = true;
-        %         scrollTubeLayer(GAME.RESOLUTION(2));   % Do it twice to fill the
-        %         disp('mhaha');
-        %         scrollTubeLayer(GAME.RESOLUTION(2));   % Entire tube layer
+
         drawToMainCanvas();
         set(MainCanvasHdl, 'CData', MainCanvas);
         set(BeginInfoHdl, 'Visible','on');
@@ -367,10 +351,10 @@ end
         set(ScoreInfoBackHdl, 'Visible','off');
         set(ScoreInfoForeHdl, 'Visible','off');
         set(GameOverHdl, 'Visible','off');
-        set(FloorSpriteHdl, 'CData',Sprites.Floor.CData);
+        set(FloorSpriteHdl, 'CData',repmat(Sprites.Floor.CData,1,ceil(GAME.RESOLUTION(2)/Sprites.Floor.Size(2))));
         Tubes.FrontP = 1;              % 1-3
         Tubes.ScreenX = GAMEPLAY.RIGHT_X_FIRST_TUBE:TUBE.H_SPACE:GAMEPLAY.RIGHT_X_FIRST_TUBE+(TUBE.N_TUBE-1)*TUBE.H_SPACE; % The middle of each tube
-        Tubes.VOffset = ceil(rand(1,3)*TUBE.MAX_VOffset);
+        Tubes.VOffset = ceil(rand(1,TUBE.N_TUBE)*TUBE.MAX_VOffset);
         refreshTubes;
         for i = 1:TUBE.N_TUBE
             set(TubeSpriteHdl(i),'CData',Sprites.TubGap.CData,...
@@ -405,12 +389,6 @@ end
         
         % Redraw the background
         MainCanvas = Sprites.Bkg.CData(:,:,:,InGameParams.CurrentBkg);
-        
-        TubeFirstCData = TubeLayer.CData(:, 1:GAME.RESOLUTION(2), :);
-        TubeFirstAlpha = TubeLayer.Alpha(:, 1:GAME.RESOLUTION(2), :);
-        % Plot the first half of TubeLayer
-        MainCanvas(TubeFirstAlpha) = ...
-            TubeFirstCData (TubeFirstAlpha);
     end
     function scrollTubes(offset)
         Tubes.ScreenX = Tubes.ScreenX - offset;
