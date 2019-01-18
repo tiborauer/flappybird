@@ -1,22 +1,21 @@
-#Flappybird for MATLAB
+#Flappybird based on PsychToolBox
 
-#### Author: Mingjing Zhang
+(based on [Mingjing Zhang's flappybird-for-matlab](https://github.com/mingjingz/flappybird-for-matlab))
 
-As one of the most popular games on app stores before being taken down, Flappy Bird does not need any further introduction. Now, it has come back alive, on MATLAB. 
+#### Author: Tibor Auer
 
-This implementation is intentionally made to replicate the user experience of the original game, with all physical dimensions of objects being identical. The gravity and 'jumping pulse' are also carefully adjusted so that they match the original as closely as possible.
+As one of the most popular games on app stores before being taken down, Flappy Bird does not need any further introduction. Now, it has come back alive, on MATLAB based on PsychToolBox-3. 
+The main intention is to use for neurofeedback visualisation.
 
-*MATLAB R2014a is recommended for this game to achieve the best graphical performance
+This implementation has been slightly modified and several parameters are available to tweak the game physics.
+
+*It has been tested in MATLAB R2018b and PsychToolBox 3.0.15 (8 November 2018).
 
 ## Usage:
-Simply execute flappybird.m. Alternatively, you can install "Flappy Bird.mlappinstal" as a MATLAB app.
+Simply execute FlappyBird.m.
 
 ## Control:
-Spacebar/Return/Uparrow/W/ -> Jump/Start game/Restart game; 
-ESC -> Quit Game.
-
-## Note:
-This game app features a few technique breakthroughs that I utilize in a game for the first time. For instance, the bird sprite is represented as a SURFACE object, as opposed to an IMAGE object, so that it can easily rotate at any angle.
+Mouse position above the threshold shown on the left -> Jump/Start game; 
 
 ** If you encounter any problem, or have any suggestions / feedbacks, please drop a comment down below. **
 
