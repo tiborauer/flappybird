@@ -15,18 +15,20 @@ classdef BirdClass < TexClass
         
         Oscil_Resolution = 45
         Oscil_Amplitude = 0.02
-        Oscil_toFlapRatio = 8        
+        Oscil_toFlapRatio = 8  
+        
+        Angle_toSpeed = 30
     end
     
     methods
-        function obj = BirdClass(window,sprites)
+        function obj = BirdClass(window,sprite)
             obj = obj@TexClass(window);
             
-            birdX = ceil(obj.Resolution(2)*obj.Size);
-            mag = round(birdX/size(sprites.CData,1));
-            obj.Size = [mag*size(sprites.CData,2) mag*size(sprites.CData,1)];
-            CData = imresize(sprites.CData,mag);
-            Alpha = imresize(sprites.Alpha,mag);
+            birdS = ceil(obj.Resolution(2)*obj.Size);
+            mag = round(birdS/size(sprite.CData,1));
+            obj.Size = [mag*size(sprite.CData,2) mag*size(sprite.CData,1)];
+            CData = imresize(sprite.CData,mag);
+            Alpha = imresize(sprite.Alpha,mag);
             for f = 1:size(CData,4)
                 fCData = CData(:,:,:,f);
                 fCData(:,:,4) = Alpha(:,:,1,f)*255;
@@ -59,7 +61,7 @@ classdef BirdClass < TexClass
                 end
                 obj.dY = obj.dY + obj.Resolution(2)*parameters.Gravity;
                 obj.XY(2) = obj.XY(2) + obj.dY;
-                angle = min(obj.dY*10, 90);
+                angle = min(obj.dY*obj.Angle_toSpeed, 90);
             end
             
             Screen(obj.Window,'DrawTexture',iFrame,[],[obj.XY(1) obj.XY(2)+oY obj.XY(1)+obj.Size(1) obj.XY(2)+oY+obj.Size(2)],angle);
