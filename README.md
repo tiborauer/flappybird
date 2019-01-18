@@ -1,4 +1,4 @@
-#Flappybird based on PsychToolBox
+# Flappybird based on PsychToolBox
 
 (based on [Mingjing Zhang's flappybird-for-matlab](https://github.com/mingjingz/flappybird-for-matlab))
 
