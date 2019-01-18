@@ -1,10 +1,9 @@
 Game = Engine;
 
-Game.InitWindow;
-Game.Speed = 1;
+Game.InitWindow('windowed',[0 0 1200 900]);
 
-while Game.Clock < 5
-    Game.Refresh;
+while ~Game.Over
+    Game.Update;
 end
 
 Game.CloseWindow;
