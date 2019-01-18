@@ -7,5 +7,3 @@ while ~Game.Over
 end
 
 Game.CloseWindow;
-
-fprintf('[INFO] FPS: %2.3f\n',Game.FPS)
