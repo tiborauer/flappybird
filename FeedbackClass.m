@@ -25,20 +25,17 @@ classdef FeedbackClass < handle
             obj.Step = step;
             
             % Initial
-            sl = obj.MaxAct-halfPlateau;     % slope range
-            obj.Slope = 6/sl;
-            obj.Distance = sl+halfPlateau*2;
+            obj.Distance = obj.MaxAct+halfPlateau;
             
             % Iterations
             % - ensure that fun(minimum) is rounded to minval
-            while round((obj.Step-1)/2*obj.Functor(-obj.MaxAct)) ~= -(obj.Step-1)/2
-                obj.Slope = obj.Slope + 0.001;
+            sl = 0;
+            while obj.cost_Slope(sl)
+                sl = sl + 0.0001;
             end
             
             % - ensure plateau is not larger than specified
-            while (obj.getPlateauX - halfPlateau) > 0
-                obj.Distance = obj.Distance - 2;
-            end
+            fminbnd(@(dist) obj.cost_Distance(dist,halfPlateau), obj.MaxAct/2, obj.MaxAct*2);
         end
         
         function SetPlateau(obj,halfPlateau)
@@ -52,14 +49,24 @@ classdef FeedbackClass < handle
         function y = Functor(obj,x)
             y = -1/(1+exp(obj.Slope*(x-(0-obj.Distance/2))))+1/(1+exp(-obj.Slope*(x-(0+obj.Distance/2))));
         end
-%     end
-%     
-%     methods(Access=private)    
+        
         function x = getPlateauX(obj)
             for x = 0:obj.MaxAct
                 if round((obj.Step-1)/2*obj.Functor(x)) > 0, break; end
             end
             x = x-1;
+        end
+    end
+    
+    methods(Access=private)
+        function val = cost_Slope(obj,slope)
+            obj.Slope = slope;
+            val = abs(round((obj.Step-1)/2*obj.Functor(-obj.MaxAct)) - -(obj.Step-1)/2);
+        end
+        
+        function val = cost_Distance(obj,dist,halfPlateau)
+             obj.Distance = dist;
+             val = abs(obj.getPlateauX - halfPlateau);
         end
     end
     
