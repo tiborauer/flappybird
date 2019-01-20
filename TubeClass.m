@@ -27,7 +27,7 @@ classdef TubeClass < TexClass
             
             tCData(:,:,4,:) = tAlpha(:,:,1,:)*255;
             
-            ext = ceil(((obj.Resolution(1) + obj.Max_VOffset) - (size(tCData,1)*2+gap)) / 2); 
+            ext = ceil(((XY(2) + obj.Max_VOffset) - (size(tCData,1)*2+gap)) / 2); 
             if ext > 0
                 CData = vertcat(...
                     repmat(tCData(1,:,:,2),ext,1),...
@@ -47,8 +47,8 @@ classdef TubeClass < TexClass
             obj.Size = [size(CData,2) size(CData,1)];
             obj.Textures = Screen(obj.Window, 'MakeTexture' ,CData);
             
-            obj.XY = [obj.Resolution(1)+XY(1) -(obj.Resolution(2)-XY(2))];
-            obj.VOffset = round((-1+rand*2-1)*obj.Max_VOffset/2);
+            obj.XY = [obj.Resolution(1)+XY(1) -obj.Max_VOffset];
+            obj.VOffset = round(rand*obj.Max_VOffset);
             obj.Gap = [obj.XY(2)+size(tCData,1)+ext+1 obj.XY(2)+size(tCData,1)+ext+gap];
         end
         
@@ -58,7 +58,7 @@ classdef TubeClass < TexClass
             obj.XY(1) = obj.XY(1) - parameters.Speed;
             if obj.XY(1) < -obj.Size(1)
                 obj.XY(1) = obj.Resolution(1)+round(rand*obj.Max_VOffset);  % shift back to the beginning + jitter
-                obj.VOffset = round((-1+rand*2-1)*obj.Max_VOffset/2);       % recalculate VOffset
+                obj.VOffset = round(rand*obj.Max_VOffset);                  % recalculate VOffset
                 parameters.nTubesPassed = parameters.nTubesPassed + 1;      % correct for tubes passed by bird
             end 
 
