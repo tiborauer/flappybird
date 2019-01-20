@@ -4,7 +4,7 @@ classdef BirdClass < TexClass
         Size = 0.05
         
         JumpOnset = NaN
-        Jump_Duration = 125 % Frame
+        Jump_Duration = 120 % (in frame) ~ 2 sec
     end
     
     properties(Access=private)
