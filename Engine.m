@@ -6,17 +6,22 @@ classdef Engine < handle
         SIMULATE = 1 % Use mouse
         
         STAGE = struct(... % sizes in proportion
+            'GRAVITY', 1e-5, ...
             'Floor_Y', [], ...
             'Floor_Height', 0.1, ...
             'Floor_Cycle', 24, ... % length of pattern to repeat
-            'Tube_SpacingInJumps', 4, ...
-            'Threshold_Size', [0.05 0.02], ...
+            'nTubes', 2, ...
+            'Threshold_Size', [0.05 0.1], ...
             'Text_Size', 0.1 ...
             );
         
         Tubes = TubeClass.empty
         
         Bird = BirdClass.empty
+        
+        Feedback 
+        
+        dThreshold = 0
         
         Window = []
         Resolution
@@ -36,14 +41,16 @@ classdef Engine < handle
     methods
         function obj = Engine
             global parameters
-            parameters.Gravity = 0.00001;
+            parameters.Gravity = obj.STAGE.GRAVITY;
             parameters.Speed = 0;
             parameters.frameNo = 0;
             parameters.nTubesPassed = 0;
         end
         
         function CloseWindow(obj)
-            numel(obj.Tubes)
+            if ~obj.SIMULATE
+                ShowCursor;
+            end
             Screen(obj.Window, 'Close');
 
             fprintf('[INFO] Score: %2.3f\n',obj.Score)
@@ -62,7 +69,7 @@ classdef Engine < handle
             if isfield(inpArgs, 'windowed'), args{1} = inpArgs.windowed; end
             
             Screen('Preference', 'SkipSyncTests', 1);
-            scr = 1;%max(Screen('Screens'));
+            scr = max(Screen('Screens'));
             [obj.Window, rect] = Screen('OpenWindow', scr, WhiteIndex(scr), args{:}); 
             obj.Resolution = [rect(3)-rect(1) rect(4)-rect(2)];
             
@@ -93,12 +100,11 @@ classdef Engine < handle
             obj.Bird = BirdClass(obj.Window,sprites.Bird);
             
             % Tubes
-            for t = 1:4
+            for t = 1:obj.STAGE.nTubes
                 if t == 1
                     tX = 0;
                 else
-                    tX = tX + obj.STAGE.Tube_SpacingInJumps*obj.Bird.Jump_Duration; 
-                    if tX > obj.Resolution(1)-obj.Bird.Jump_Duration, break; end
+                    tX = tX + round(obj.Resolution(1)/obj.STAGE.nTubes); 
                 end
                 obj.Tubes(t) = TubeClass(obj.Window,sprites.Tube,round(4*...
                         (obj.Bird.Size(2) + ...
@@ -106,7 +112,14 @@ classdef Engine < handle
                         [tX obj.STAGE.Floor_Y]);
             end
             
-            SetMouse(obj.STAGE.Threshold_Size(1)*obj.Resolution(1)/2,obj.Resolution(2)/2,obj.Window);
+            obj.STAGE.Threshold_Size = round(obj.STAGE.Threshold_Size.*obj.Resolution);
+            obj.Feedback = FeedbackClass(obj.Resolution(2)/2,21,obj.STAGE.Threshold_Size(2)/2);
+            
+            if obj.SIMULATE
+                SetMouse(obj.STAGE.Threshold_Size(1)*obj.Resolution(1)/2,obj.Resolution(2)/2,obj.Window);
+            else
+                HideCursor;
+            end
         end
         
         function Update(obj)
@@ -119,9 +132,19 @@ classdef Engine < handle
             Screen(obj.Window,'DrawTexture',obj.Textures.Background);
             
             % Bird
-            [~, mY] = GetMouse(obj.Window);
-            fb = mY < (1-obj.STAGE.Threshold_Size(2))*obj.Resolution(2)/2;
-            if fb, parameters.Speed = 1; end
+            if obj.SIMULATE
+                [~, mY] = GetMouse(obj.Window);
+                act = obj.Resolution(2)/2-mY;
+            end
+            fb = obj.Feedback.Transform(act-obj.dThreshold/2);
+            if fb > 0
+                if ~parameters.Speed, parameters.Speed = round(obj.Resolution(1)/1000); end  % Start
+                obj.dThreshold = obj.Resolution(2)/2-mY;
+                obj.Feedback.SetPlateau(obj.STAGE.Threshold_Size(2)/2+obj.dThreshold/2);
+            elseif fb < 0
+                if obj.dThreshold, obj.Feedback.SetPlateau(obj.STAGE.Threshold_Size(2)/2); end
+                obj.dThreshold = 0;
+            end
 %             if ~mod(parameters.frameNo,120), obj.Bird.JumpOnset = NaN; end      % New Jump in every 2 second if above Threshold       
             obj.Bird.Update(fb);
             
@@ -136,10 +159,15 @@ classdef Engine < handle
                 [0 obj.STAGE.Floor_Y obj.Resolution(1) obj.Resolution(2)]);
             
             % Threshold
-            Screen(obj.Window,'FillRect',[255 255 255]*0.5,[0 (1-obj.STAGE.Threshold_Size(2))*obj.Resolution(2)/2 obj.STAGE.Threshold_Size(1)*obj.Resolution(1) (1+obj.STAGE.Threshold_Size(2))*obj.Resolution(2)/2])
+            Screen(obj.Window,'FillRect',[255 255 255]*0.5,[0 (obj.Resolution(2)-obj.STAGE.Threshold_Size(2))/2-obj.dThreshold ...
+                obj.STAGE.Threshold_Size(1) (obj.Resolution(2)+obj.STAGE.Threshold_Size(2))/2])
+%             % QC
+%             Screen(obj.Window,'FrameRect',[255 255 255]*1,[0 obj.Resolution(2)/2-obj.dThreshold/2-obj.Feedback.getPlateauX ...
+%                 obj.STAGE.Threshold_Size(1) obj.Resolution(2)/2-obj.dThreshold/2+obj.Feedback.getPlateauX])
             
             % Score
-            DrawFormattedText(obj.Window,num2str(obj.Score),'center',obj.Resolution(2));
+            txt = sprintf('%d --> %d | %d',act,fb,obj.Score);
+            DrawFormattedText(obj.Window,txt,'center',obj.Resolution(2));
 
             Screen(obj.Window,'Flip');
         end
@@ -156,6 +184,9 @@ classdef Engine < handle
             
             % fall
             val = val || (obj.Bird.XY(2) + obj.Bird.Size(2) >= obj.STAGE.Floor_Y); 
+            
+            % fly over
+            val = val || (obj.Bird.XY(2) < 0); 
         end
         
         function val = get.Score(obj)
