@@ -1,8 +1,8 @@
 clear
 
-Game = Engine;
+Game = Engine('settings.json');
 
-Game.InitWindow('windowed',[0 0 1200 900]);
+Game.InitWindow;
 
 while ~Game.Over
     Game.Update;
