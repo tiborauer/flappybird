@@ -14,6 +14,7 @@ classdef Engine < handle
             'Text_Size', 0.1 ...
             );
         SIMULATE = true % Use mouse
+        T_BIRDtoTUBE = 15; % sec
         SHAPING = false;
        
         % Game variables
@@ -23,7 +24,8 @@ classdef Engine < handle
         % Objects
         Tubes = TubeClass.empty
         Bird = BirdClass.empty
-        Feedback 
+        Feedback = FeedbackClass.empty
+        Log = LogClass.empty
         
         % Low level variables
         SETTINGS = struct(...
@@ -33,8 +35,9 @@ classdef Engine < handle
         Window = []
         Resolution
         Textures
-        tId
-        
+        ExperimentStart
+        FrameDuration
+                
     end
     
     properties (Dependent)
@@ -47,6 +50,7 @@ classdef Engine < handle
     methods
         function obj = Engine(configFile)
             global parameters
+            parameters = [];
             
             if nargin
                 obj.SETTINGS.FileName = configFile;
@@ -56,6 +60,7 @@ classdef Engine < handle
             parameters.Gravity = obj.STAGE.Gravity;
             parameters.Speed = 0;
             parameters.frameNo = 0;
+            parameters.FPS = @obj.FPS;
             parameters.nTubesPassed = 0;
         end
         
@@ -148,7 +153,7 @@ classdef Engine < handle
         function Update(obj)
             global parameters
             
-            if ~parameters.frameNo, obj.tId = tic; end
+            if ~parameters.frameNo, obj.ExperimentStart = GetSecs; end
             parameters.frameNo = parameters.frameNo + 1;
             
             % Background
@@ -161,7 +166,12 @@ classdef Engine < handle
             end
             fb = obj.Feedback.Transform(act-obj.dThreshold/2);
             if fb > 0
-                if ~parameters.Speed, parameters.Speed = round(obj.Resolution(1)/1000); end  % Start
+                if ~parameters.Speed
+                    % Ensure T_BIRDtoTUBE adjust FPS if needed
+                    parameters.Speed = ceil(obj.Resolution(1)/(2*obj.T_BIRDtoTUBE*obj.FPS)); 
+                    nFrame = obj.Resolution(1)/(2*parameters.Speed);
+                    obj.FrameDuration = obj.T_BIRDtoTUBE/nFrame;
+                end
                 if obj.SHAPING
                     obj.dThreshold = obj.Resolution(2)/2-mY;
                     obj.Feedback.SetPlateau(obj.STAGE.Threshold_Size(2)/2+obj.dThreshold/2);
@@ -196,6 +206,7 @@ classdef Engine < handle
             DrawFormattedText(obj.Window,txt,'center',obj.Resolution(2));
 
             Screen(obj.Window,'Flip');
+            if obj.FrameDuration, while obj.Clock < parameters.frameNo*obj.FrameDuration, end; end
         end
         
         function val = get.Over(obj)
@@ -224,7 +235,7 @@ classdef Engine < handle
             global parameters
             
             if ~parameters.frameNo, val = 0;
-            else, val = toc(obj.tId); end
+            else, val = GetSecs - obj.ExperimentStart; end
         end
         
         function val = get.FPS(obj)
@@ -232,6 +243,10 @@ classdef Engine < handle
             
             val = parameters.frameNo/obj.Clock;
         end
+        
+    end
+    
+    methods(Access=private)
         
         function LoadConfig(obj)
             obj.SETTINGS.Initial = loadjson(obj.SETTINGS.FileName);
@@ -252,6 +267,7 @@ classdef Engine < handle
             end
             savejson('',obj.SETTINGS.Initial,'Filename',obj.SETTINGS.FileName);
         end
+        
     end
     
 end

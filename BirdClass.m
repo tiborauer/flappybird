@@ -4,7 +4,7 @@ classdef BirdClass < TexClass
         Size = 0.05
         
         JumpOnset = NaN
-        Jump_Duration = 120 % (in frame) ~ 2 sec
+        Jump_Duration = 2 % no further jump or fall is possible within (sec)
     end
     
     properties(Access=private)
@@ -57,7 +57,7 @@ classdef BirdClass < TexClass
                     if ~obj.isJumping
                         obj.JumpOnset = parameters.frameNo;
                         obj.JumpY = obj.XY(2);
-                        obj.dY = -obj.Resolution(2)*(obj.Jump_Duration+1)*parameters.Gravity; % to jump back to baseline: -obj.Resolution(2)*(obj.Jump_Duration+1)*parameters.Gravity;
+                        obj.dY = -obj.Resolution(2)*(obj.Jump_Duration*parameters.FPS()+1)*parameters.Gravity; % to jump back to baseline: -obj.Resolution(2)*(obj.Jump_Duration/2+1)*parameters.Gravity;
                     end
                 elseif fb < 0
                     obj.JumpOnset = NaN;
@@ -75,7 +75,7 @@ classdef BirdClass < TexClass
         function val = isJumping(obj)
             global parameters
             
-            val = ~isnan(obj.JumpOnset) && parameters.frameNo <= (obj.JumpOnset+obj.Jump_Duration);
+            val = ~isnan(obj.JumpOnset) && parameters.frameNo <= (obj.JumpOnset+obj.Jump_Duration*parameters.FPS());
         end
     end
 end
