@@ -14,7 +14,7 @@ classdef LogClass < handle
             obj.Stack = struct(v{:});
         end
         
-        function Put(obj,varargin)
+        function Set(obj,varargin)
             f = fieldnames(obj.Stack);
             
             if nargin-1 < numel(f), varargin{end+1} = ''; end
