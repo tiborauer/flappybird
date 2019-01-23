@@ -36,6 +36,7 @@ classdef Engine < handle
         Resolution
         Textures
         ExperimentStart
+        BirdStart = [0 0]   % frame, clock
         FrameDuration
                 
     end
@@ -62,6 +63,8 @@ classdef Engine < handle
             parameters.frameNo = 0;
             parameters.FPS = @obj.FPS;
             parameters.nTubesPassed = 0;
+            
+%             obj.Log = LogClass('Name','Time','Frame','Value','Notes');
         end
         
         function InitWindow(obj)
@@ -154,6 +157,7 @@ classdef Engine < handle
             global parameters
             
             if ~parameters.frameNo, obj.ExperimentStart = GetSecs; end
+            tFrame = obj.Clock;
             parameters.frameNo = parameters.frameNo + 1;
             
             % Background
@@ -171,6 +175,7 @@ classdef Engine < handle
                     parameters.Speed = ceil(obj.Resolution(1)/(2*obj.T_BIRDtoTUBE*obj.FPS)); 
                     nFrame = obj.Resolution(1)/(2*parameters.Speed);
                     obj.FrameDuration = obj.T_BIRDtoTUBE/nFrame;
+                    obj.BirdStart = [tFrame parameters.frameNo];
                 end
                 if obj.SHAPING
                     obj.dThreshold = obj.Resolution(2)/2-mY;
@@ -206,7 +211,8 @@ classdef Engine < handle
             DrawFormattedText(obj.Window,txt,'center',obj.Resolution(2));
 
             Screen(obj.Window,'Flip');
-            if obj.FrameDuration, while obj.Clock < parameters.frameNo*obj.FrameDuration, end; end
+            % Adjust FPS
+            if obj.FrameDuration, while obj.Clock-obj.BirdStart(1) < (parameters.frameNo-obj.BirdStart(2))*obj.FrameDuration, end; end
         end
         
         function val = get.Over(obj)
