@@ -9,8 +9,7 @@ classdef BirdClass < TexClass
     
     properties(Access=private)
         dY = 0
-        JumpY
-        
+       
         FlapSpeed = 0.1
         
         Oscil_Resolution = 45
@@ -56,7 +55,6 @@ classdef BirdClass < TexClass
                 if fb > 0 % Jump
                     if ~obj.isJumping
                         obj.JumpOnset = parameters.frameNo;
-                        obj.JumpY = obj.XY(2);
                         obj.dY = -obj.Resolution(2)*(obj.Jump_Duration*parameters.FPS()+1)*parameters.Gravity; % to jump back to baseline: -obj.Resolution(2)*(obj.Jump_Duration/2+1)*parameters.Gravity;
                     end
                 elseif fb < 0
